@@ -213,6 +213,67 @@ refresh: copy-saves convert-json
 	@echo "📁 Local saves: $(LOCAL_SAVES_PATH)"
 	@echo "📁 JSON files: $(JSON_OUTPUT_PATH)"
 
+# Task: Create patch template
+.PHONY: patch-template
+patch-template:
+	@echo "📝 Creating patch template..."
+	@if [ ! -f "$(PYTHON_ENV)" ]; then \
+		echo "❌ Python virtual environment not found: $(PYTHON_ENV)"; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(JSON_OUTPUT_PATH)" ]; then \
+		echo "❌ JSON files not found. Run 'make convert-json' first"; \
+		exit 1; \
+	fi
+	@$(PYTHON_ENV) patch_saves.py template
+	@echo "💡 Edit the template file and use 'make patch PATCH=patches/your_patch.json'"
+
+# Task: Apply patch file
+.PHONY: patch
+patch:
+	@if [ -z "$(PATCH)" ]; then \
+		echo "❌ Please specify patch file: make patch PATCH=patches/your_patch.json"; \
+		exit 1; \
+	fi
+	@echo "🔧 Applying patch file: $(PATCH)"
+	@if [ ! -f "$(PYTHON_ENV)" ]; then \
+		echo "❌ Python virtual environment not found: $(PYTHON_ENV)"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(PATCH)" ]; then \
+		echo "❌ Patch file not found: $(PATCH)"; \
+		exit 1; \
+	fi
+	@$(PYTHON_ENV) patch_saves.py apply "$(PATCH)"
+
+# Task: Quick interactive patching
+.PHONY: quick-patch
+quick-patch:
+	@echo "🚀 Quick patch mode (interactive)..."
+	@if [ ! -f "$(PYTHON_ENV)" ]; then \
+		echo "❌ Python virtual environment not found: $(PYTHON_ENV)"; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(JSON_OUTPUT_PATH)" ]; then \
+		echo "❌ JSON files not found. Run 'make convert-json' first"; \
+		exit 1; \
+	fi
+	@$(PYTHON_ENV) patch_saves.py quick
+
+# Task: Show current values
+.PHONY: show-values
+show-values:
+	@echo "📊 Current save file values..."
+	@if [ ! -f "$(PYTHON_ENV)" ]; then \
+		echo "❌ Python virtual environment not found: $(PYTHON_ENV)"; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(JSON_OUTPUT_PATH)" ]; then \
+		echo "❌ JSON files not found. Run 'make convert-json' first"; \
+		exit 1; \
+	fi
+	@$(PYTHON_ENV) patch_saves.py current
+
 # Clean up local files (keeps original saves and backups untouched)
 .PHONY: clean
 clean:
@@ -297,7 +358,13 @@ help:
 	@echo "  convert-json     - Convert local save files to JSON format"
 	@echo "  refresh          - Full refresh: copy saves + convert to JSON"
 	@echo ""
-	@echo "💾 Backup & Recovery:"
+	@echo "� Save File Patching:"
+	@echo "  patch-template   - Create a patch template file"
+	@echo "  patch PATCH=file - Apply a specific patch file"
+	@echo "  quick-patch      - Interactive patching mode"
+	@echo "  show-values      - Display current save file values"
+	@echo ""
+	@echo "�💾 Backup & Recovery:"
 	@echo "  backup           - Create timestamped backup of original save files"
 	@echo "  restore          - Restore from latest backup (with confirmation)"
 	@echo "  restore-from     - Restore from specific backup (interactive)"
@@ -311,16 +378,21 @@ help:
 	@echo "  status           - Show status of save files in all locations"
 	@echo "  help             - Show this help message"
 	@echo ""
-	@echo "🚨 Safety Workflow for Save Modification:"
+	@echo "🚨 Complete Patching Workflow:"
 	@echo "  1. make backup          # Create safety backup"
-	@echo "  2. make copy-saves      # Get local copy for editing"
-	@echo "  3. make convert-json    # Convert to JSON for modification"
-	@echo "  4. [Edit JSON files]    # Make your changes"
-	@echo "  5. [Convert back & test]# Test your modifications"
-	@echo "  6. make restore         # If something goes wrong"
+	@echo "  2. make refresh         # Get fresh copies and convert to JSON"
+	@echo "  3. make patch-template  # Create patch template"
+	@echo "  4. [Edit patch file]    # Modify values in patches/patch_template.json"
+	@echo "  5. make patch PATCH=patches/patch_template.json  # Apply patches"
+	@echo "  6. [Test in game]       # Verify changes work"
+	@echo "  7. make restore         # If something goes wrong"
+	@echo ""
+	@echo "🚀 Quick Patching:"
+	@echo "  make refresh && make quick-patch  # Interactive patching"
 	@echo ""
 	@echo "📂 File locations:"
 	@echo "  Original: $(ORIGINAL_SAVES_PATH)"
 	@echo "  Local:    $(LOCAL_SAVES_PATH)"
 	@echo "  JSON:     $(JSON_OUTPUT_PATH)"
 	@echo "  Backups:  $(BACKUP_PATH)"
+	@echo "  Patches:  patches/"

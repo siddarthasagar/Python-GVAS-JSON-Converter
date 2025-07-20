@@ -39,6 +39,66 @@ make backup
 make patch PATCH=patches/my_custom_patch.json
 ```
 
+## 🍯 Infinite Food Farm System
+
+### **NEW: Resource Node Patching**
+Create infinite renewable food sources by modifying resource nodes directly.
+
+### **Step 1: Generate Food Nodes Template**
+```bash
+# Create inventory of all food sources
+make food-nodes-template
+```
+
+This generates `patches/food_nodes_template.json` with all 885 resource nodes.
+
+### **Step 2: Customize Food Sources**
+Edit `patches/food_nodes_template.json`:
+```json
+{
+  "description": "Food Nodes Patch Template",
+  "nodes": [
+    {
+      "index": 42,
+      "current_value": 15,
+      "new_value": 999999,        # Set to infinite
+      "resource_type": "EResourceType::Aphid",
+      "enabled": true             # Enable this patch
+    },
+    {
+      "index": 89,
+      "current_value": 8,
+      "new_value": 50000,
+      "resource_type": "EResourceType::Seed",
+      "enabled": true             # Enable this patch
+    }
+  ]
+}
+```
+
+### **Step 3: Apply Food Node Patches**
+```bash
+# Apply your food node modifications
+make patch-food-nodes PATCH=patches/food_nodes_template.json
+```
+
+### **Food Farm Strategies:**
+
+#### **Conservative Approach:**
+- Enable 5-10 high-value nodes
+- Set to 2x-5x original values
+- Focus on renewable sources (Aphids)
+
+#### **Moderate Approach:**
+- Enable 10-20 nodes
+- Set to 10,000-50,000 food each
+- Mix of resource types
+
+#### **Infinite Farm:**
+- Enable top 50 nodes
+- Set all to 999,999 food
+- Effectively unlimited resources
+
 ## 🛡️ Game Corruption Prevention
 
 ### **Why .sav Files Get Corrupted:**
@@ -168,6 +228,7 @@ make restore-from
 
 ## 🚀 Quick Start Commands
 
+### **Standard Resource Patching:**
 ```bash
 # 1. Safety first
 make backup
@@ -188,3 +249,77 @@ make patch PATCH=patches/patch_template.json
 # 7. If problems:
 make restore
 ```
+
+### **Infinite Food Farm Setup:**
+```bash
+# 1. Create backup
+make backup
+
+# 2. Generate food nodes template
+make food-nodes-template
+
+# 3. Edit patches/food_nodes_template.json
+#    - Set "enabled": true for desired nodes
+#    - Set "new_value" to desired amounts
+
+# 4. Apply food node patches
+make patch-food-nodes PATCH=patches/food_nodes_template.json
+
+# 5. Convert back to .sav and test in game
+
+# 6. If problems:
+make restore
+```
+
+## 🎮 Complete Patching Workflows
+
+### **Workflow 1: Quick Resource Boost**
+```bash
+make backup && make refresh && make quick-patch
+```
+
+### **Workflow 2: Custom Value Control**
+```bash
+make backup
+make patch-template
+# Edit patches/patch_template.json
+make patch PATCH=patches/patch_template.json
+```
+
+### **Workflow 3: Infinite Food Farm**
+```bash
+make backup
+make food-nodes-template
+# Edit patches/food_nodes_template.json
+make patch-food-nodes PATCH=patches/food_nodes_template.json
+```
+
+### **Workflow 4: Combined Approach**
+```bash
+make backup
+# 1. Boost immediate resources
+make patch-template && make patch PATCH=patches/patch_template.json
+# 2. Create infinite food sources
+make food-nodes-template && make patch-food-nodes PATCH=patches/food_nodes_template.json
+```
+
+## 🔧 Available Make Commands
+
+### **File Management:**
+- `make backup` - Create timestamped backup
+- `make restore` - Restore from latest backup
+- `make refresh` - Copy saves and convert to JSON
+- `make status` - Show file status
+
+### **Standard Patching:**
+- `make patch-template` - Create patch template
+- `make patch PATCH=file` - Apply patch file
+- `make quick-patch` - Interactive patching
+
+### **Food Node Patching:**
+- `make food-nodes-template` - Create food nodes template
+- `make patch-food-nodes PATCH=file` - Apply food nodes patch
+
+### **Cleanup:**
+- `make clean` - Remove local files (keeps backups)
+- `make help` - Show all available commands

@@ -1,3 +1,16 @@
 games_save_data
 **/__pycache__
 patches
+backups
+
+# Temporary files
+test_*.py
+test_*.sh
+test_*.sav
+test_*.json
+analyze_*.py
+Colony1LevelData_*.sav
+*_test.sav
+*_temp.json
+*.backup.*
+temp

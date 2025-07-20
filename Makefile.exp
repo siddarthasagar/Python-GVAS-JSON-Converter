@@ -1,0 +1,94 @@
+# Experimental Makefile for EotU Save Patcher
+# Contains experimental analysis and development tasks
+
+# --- Paths & Variables ---
+SAVE_DIR := $(HOME)/Library/Application Support/Epic/EotU/Saved/SaveGames
+TEMP_DIR := temp
+EXP_DIR := experimental
+EXP_SCRIPTS := $(EXP_DIR)/scripts
+EXP_BIN := $(EXP_DIR)/bin
+EXP_LEGACY := $(EXP_DIR)/legacy
+PYTHON_ENV := .venv/bin/python
+
+# Multi-save support
+MAIN_SAVES := $(shell find "$(SAVE_DIR)" -maxdepth 1 -type f -name '*.sav' ! -regex '.*-backup[0-9]\+\.sav' -exec basename {} \;)
+ORIGINAL_SAVE ?= Colony1LevelData.sav
+WORKING_JSON := $(TEMP_DIR)/$(ORIGINAL_SAVE)_working.json
+
+# --- Colors ---
+RED := \033[0;31m
+GREEN := \033[0;32m
+YELLOW := \033[0;33m
+BLUE := \033[0;34m
+NC := \033[0m # No Color
+
+.PHONY: help uv-install analyze-structure analyze-resources analyze-food-nodes debug-json inspect-saves extract-diff create-food-template experimental-patch
+
+# --- Help ---
+help: ## Show experimental commands
+	@echo "$(BLUE)Experimental EotU Analysis & Development Tools$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Available experimental commands:$(NC)"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+
+# --- Dependency Management ---
+uv-install: ## Install dependencies with uv
+	uv pip install -r requirements.lock
+
+# --- Analysis Scripts ---
+analyze-structure: ## Analyze save file JSON structure
+	@echo "$(BLUE)Analyzing save file structure...$(NC)"
+	PYTHONPATH=. python3 $(EXP_SCRIPTS)/debug_json_structure.py
+
+analyze-resources: ## Analyze resource structures in saves
+	@echo "$(BLUE)Analyzing resource structures...$(NC)"
+	PYTHONPATH=. python3 $(EXP_SCRIPTS)/analyze_resource_structure.py
+	PYTHONPATH=. python3 $(EXP_SCRIPTS)/analyze_resource_types.py
+
+analyze-food-nodes: ## Analyze food node structures
+	@echo "$(BLUE)Analyzing food nodes...$(NC)"
+	PYTHONPATH=. python3 $(EXP_SCRIPTS)/analyze_food_nodes.py
+
+analyze-backup-resources: ## Analyze backup resource states
+	@echo "$(BLUE)Analyzing backup resources...$(NC)"
+	PYTHONPATH=. python3 $(EXP_SCRIPTS)/analyze_backup_resources.py
+
+debug-json: ## Debug JSON structure issues
+	@echo "$(BLUE)Debugging JSON structures...$(NC)"
+	PYTHONPATH=. python3 $(EXP_SCRIPTS)/inspect_json_structure.py
+
+inspect-saves: ## Inspect specific save file components
+	@echo "$(BLUE)Inspecting save components...$(NC)"
+	PYTHONPATH=. python3 $(EXP_SCRIPTS)/inspect_first_items.py
+	PYTHONPATH=. python3 $(EXP_SCRIPTS)/inspect_resourcebase_players.py
+
+extract-diff: ## Extract differences between saves
+	@echo "$(BLUE)Extracting save differences...$(NC)"
+	PYTHONPATH=. python3 $(EXP_SCRIPTS)/differential_analysis.py
+	PYTHONPATH=. python3 $(EXP_SCRIPTS)/extract_foodheld_diff.py
+
+create-food-template: ## Create experimental food templates
+	@echo "$(BLUE)Creating experimental food templates...$(NC)"
+	PYTHONPATH=. python3 $(EXP_SCRIPTS)/create_food_template.py
+
+# --- Experimental Utilities ---
+experimental-patch: ## Run experimental patcher
+	@echo "$(BLUE)Running experimental patcher...$(NC)"
+	PYTHONPATH=. python3 $(EXP_BIN)/uesave_food_patcher.py
+
+migrate-templates: ## Migrate patch templates
+	@echo "$(BLUE)Migrating patch templates...$(NC)"
+	PYTHONPATH=. python3 $(EXP_BIN)/migrate_patch_templates.py
+
+# --- Legacy Experimental ---
+
+run-main: ## Run experimental main script
+	@echo "$(BLUE)Running experimental main script...$(NC)"
+	PYTHONPATH=. python3 $(EXP_DIR)/main.py
+
+# --- Development Helpers ---
+clean-exp: ## Clean experimental temp files
+	@echo "$(BLUE)Cleaning experimental files...$(NC)"
+	@rm -f $(EXP_DIR)/temp/* 2>/dev/null || true
+	@rm -f $(EXP_DIR)/analysis/* 2>/dev/null || true
+	@echo "$(GREEN)✓ Experimental cleanup complete$(NC)"

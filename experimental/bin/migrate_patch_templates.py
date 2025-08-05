@@ -5,8 +5,9 @@ Retains legacy templates for fallback.
 """
 
 import json
-import sys
 from pathlib import Path
+import sys
+
 
 def legacy_to_generic(legacy_patch):
     # If the loaded patch is a list, treat as already generic
@@ -18,11 +19,7 @@ def legacy_to_generic(legacy_patch):
     if isinstance(patch_data, dict):
         for prop, value in patch_data.items():
             if value is not None:
-                entry = {
-                    "type": "property",
-                    "path": [prop],
-                    "action": {"action": "set", "value": value}
-                }
+                entry = {"type": "property", "path": [prop], "action": {"action": "set", "value": value}}
                 patches.append(entry)
     elif isinstance(patch_data, list):
         patches = patch_data
@@ -32,26 +29,27 @@ def legacy_to_generic(legacy_patch):
     generic["patches"] = patches
     return generic
 
+
 def migrate_file(legacy_path, generic_path):
-    with open(legacy_path, "r", encoding="utf-8") as f:
+    with open(legacy_path, encoding="utf-8") as f:
         legacy_patch = json.load(f)
     # If file is a list, treat as already generic
-    if isinstance(legacy_patch, list):
-        generic_patch = {"patches": legacy_patch}
-    else:
-        generic_patch = legacy_to_generic(legacy_patch)
+    generic_patch = {"patches": legacy_patch} if isinstance(legacy_patch, list) else legacy_to_generic(legacy_patch)
     with open(generic_path, "w", encoding="utf-8") as f:
         json.dump(generic_patch, f, indent=2)
     print(f"Migrated {legacy_path} → {generic_path}")
 
+
 def main():
-    if len(sys.argv) < 2:
+    MIN_ARGS = 2  # script name + at least one legacy file
+    if len(sys.argv) < MIN_ARGS:
         print("Usage: python migrate_patch_templates.py <legacy_patch_file1> [<legacy_patch_file2> ...]")
         sys.exit(1)
     for legacy_file in sys.argv[1:]:
         legacy_path = Path(legacy_file)
         generic_path = legacy_path.with_suffix(".generic.json")
         migrate_file(legacy_path, generic_path)
+
 
 if __name__ == "__main__":
     main()

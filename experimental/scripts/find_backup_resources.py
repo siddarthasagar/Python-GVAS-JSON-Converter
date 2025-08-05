@@ -5,102 +5,97 @@ Find Resources value in uesave-rs converted backup JSON
 
 import json
 
+
+def _search_resources_in_player(player) -> tuple[bool, object | None]:
+    """Helper to extract Resources from a player dict; returns (found, value)."""
+    if not isinstance(player, dict):
+        return False, None
+
+    player_props = player.get("properties")
+    if not isinstance(player_props, dict):
+        return False, None
+
+    # Prefer direct key check
+    if "Resources" in player_props:
+        resources_prop = player_props["Resources"]
+        if isinstance(resources_prop, dict) and "value" in resources_prop:
+            return True, resources_prop["value"]
+        return True, resources_prop
+
+    # Fallback: scan for related keys to provide context
+    for prop_name, prop_value in player_props.items():
+        if prop_name == "Resources":
+            return True, prop_value
+    return False, None
+
+
+def _recursive_search(obj, path=""):
+    """Recursive fallback search for a 'Resources' key anywhere."""
+    if isinstance(obj, dict):
+        if "Resources" in obj:
+            return obj["Resources"]
+        for key, value in obj.items():
+            found = _recursive_search(value, f"{path}.{key}")
+            if found is not None:
+                return found
+    elif isinstance(obj, list):
+        for j, item in enumerate(obj):
+            found = _recursive_search(item, f"{path}[{j}]")
+            if found is not None:
+                return found
+    return None
+
+
 def find_resources_in_backup():
     """Find Resources value in the backup JSON file"""
-    
-    with open('test_backup.json', 'r') as f:
+    with open("test_backup.json") as f:
         data = json.load(f)
-    
+
     print("🔍 SEARCHING FOR RESOURCES IN BACKUP FILE")
     print("=" * 50)
-    
+
     # Navigate to PlayersSaveStates_0
-    root = data.get('root', {})
-    props = root.get('properties', {})
-    
-    if 'PlayersSaveStates_0' not in props:
+    root = data.get("root", {})
+    props = root.get("properties", {})
+    player_states_key = "PlayersSaveStates_0"
+
+    if player_states_key not in props:
         print("❌ PlayersSaveStates_0 not found")
-        return
-    
-    player_states = props['PlayersSaveStates_0']
+        return None
+
+    player_states = props[player_states_key]
     print(f"📊 PlayersSaveStates_0 structure: {type(player_states)}")
-    
-    # Navigate through the structure
+
+    result = None
+
     try:
-        # Get the array structure
-        array_data = player_states['Array']['Struct']['value']
+        array_data = player_states["Array"]["Struct"]["value"]
         print(f"📊 Array value type: {type(array_data)}")
-        
+
         if isinstance(array_data, list):
             print(f"📊 Found {len(array_data)} player save states")
-            
             for i, player in enumerate(array_data):
-                if isinstance(player, dict):
-                    print(f"\n🎮 Player {i} structure:")
-                    print(f"  Keys: {list(player.keys())}")
-                    
-                    # Check for properties
-                    if 'properties' in player:
-                        player_props = player['properties']
-                        if isinstance(player_props, dict):
-                            print(f"  Properties: {list(player_props.keys())}")
-                            
-                            # Look for Resources
-                            for prop_name, prop_value in player_props.items():
-                                if prop_name == 'Resources':
-                                    print(f"  ✅ Found Resources: {prop_value}")
-                                    return prop_value
-                                elif 'Resource' in prop_name:
-                                    print(f"  📝 Found {prop_name}: {prop_value}")
-                        
-                        # Also check nested structure
-                        if 'Resources' in player_props:
-                            resources_prop = player_props['Resources']
-                            if isinstance(resources_prop, dict):
-                                print(f"  ✅ Found Resources (dict): {resources_prop}")
-                                if 'value' in resources_prop:
-                                    print(f"  ✅ Resources value: {resources_prop['value']}")
-                                    return resources_prop['value']
-                            else:
-                                print(f"  ✅ Found Resources (direct): {resources_prop}")
-                                return resources_prop
-                    
+                found, value = _search_resources_in_player(player)
+                if found:
+                    print(f"  ✅ Player {i} Resources: {value}")
+                    result = value
+                    break
+
         elif isinstance(array_data, dict):
             print(f"📊 Array data keys: {list(array_data.keys())}")
-            
-            # Look for Resources directly
-            if 'Resources' in array_data:
-                resources_value = array_data['Resources']
-                print(f"✅ Found Resources: {resources_value}")
-                return resources_value
-                
+            if "Resources" in array_data:
+                result = array_data["Resources"]
+                print(f"✅ Found Resources: {result}")
+
     except KeyError as e:
         print(f"❌ KeyError navigating structure: {e}")
-        
-        # Try a different approach - search recursively
-        def search_recursive(obj, path=""):
-            if isinstance(obj, dict):
-                if 'Resources' in obj:
-                    print(f"✅ Found Resources at {path}: {obj['Resources']}")
-                    return obj['Resources']
-                for key, value in obj.items():
-                    result = search_recursive(value, f"{path}.{key}")
-                    if result is not None:
-                        return result
-            elif isinstance(obj, list):
-                for i, item in enumerate(obj):
-                    result = search_recursive(item, f"{path}[{i}]")
-                    if result is not None:
-                        return result
-            return None
-        
         print("\n🔍 Trying recursive search...")
-        result = search_recursive(player_states)
-        if result is not None:
-            return result
-    
-    print("❌ Resources not found in backup file")
-    return None
+        result = _recursive_search(player_states)
+
+    if result is None:
+        print("❌ Resources not found in backup file")
+    return result
+
 
 if __name__ == "__main__":
     find_resources_in_backup()

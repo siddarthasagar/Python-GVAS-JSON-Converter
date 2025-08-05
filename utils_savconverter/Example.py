@@ -1,33 +1,42 @@
 # imports to convert between .sav and .json
-from SavConverter import sav_to_json, read_sav, json_to_sav, load_json
 # imports to navigate and manipulate the json structure
-from SavConverter import obj_to_json, print_json, get_object_by_path, insert_object_by_path, replace_object_by_path, update_property_by_path
+from SavConverter import (
+    get_object_by_path,
+    insert_object_by_path,
+    json_to_sav,
+    load_json,
+    print_json,
+    read_sav,
+    replace_object_by_path,
+    sav_to_json,
+    update_property_by_path,
+)
 
 # The following lines are an example of the .sav to .json conversion process
 # Get .sav property classes
-properties = read_sav('ExampleSavFiles/CrabChampions_SaveSlot_without_AutoSave.sav')
+properties = read_sav("ExampleSavFiles/CrabChampions_SaveSlot_without_AutoSave.sav")
 
 # Convert properties to json
-output = sav_to_json(properties, string = True)
+output = sav_to_json(properties, string=True)
 
 # Write json string to file
-with open('CrabChampions_SaveSlot.json', 'w') as json_file:
+with open("CrabChampions_SaveSlot.json", "w") as json_file:
     json_file.write(output)
-
 
 
 # The following lines are an example of the traversal and manipulation of this specific .json structure using paths
 # load your converted json file
-data = load_json('CrabChampions_SaveSlot.json')
+data = load_json("CrabChampions_SaveSlot.json")
 
-# path to the first Weapon object (0) in the list of Weapon objects ('value') in the RankedWeapons object ({"name": "RankedWeapons"})
+# path to the first Weapon object (0) in the list of Weapon objects ('value')
+# in the RankedWeapons object ({"name": "RankedWeapons"})
 path_to_find = [{"name": "RankedWeapons"}, "value", 0]
 
 # Full path to the value ('value') in Rank object ({'name':'Rank'}) within that first weapon object
-path_to_update = [{"name": "RankedWeapons"}, "value", 0, {'name':'Rank'}, 'value']
+path_to_update = [{"name": "RankedWeapons"}, "value", 0, {"name": "Rank"}, "value"]
 
 # new value for the 'value' key in the Rank object
-new_value = 'ECrabRank::Gold'
+new_value = "ECrabRank::Gold"
 
 # find and display the first weapon object
 obj = get_object_by_path(data, path_to_find)
@@ -40,15 +49,10 @@ print("\nUpdated Rank object value:")
 print_json(get_object_by_path(data, path_to_find))
 
 # same path for will be used to show object replacement
-path_to_replace = [{"name": "RankedWeapons"}, "value", 0, {'name': 'Rank'}]
+path_to_replace = [{"name": "RankedWeapons"}, "value", 0, {"name": "Rank"}]
 
 # new Rank object
-new_object = {
-    "type": "EnumProperty",
-    "name": "Rank",
-    "enum": "ECrabRank",
-    "value": "ECrabRank::Bronze"
-}
+new_object = {"type": "EnumProperty", "name": "Rank", "enum": "ECrabRank", "value": "ECrabRank::Bronze"}
 
 # replace the rank object with the new one
 replace_object_by_path(data, path_to_replace, new_object)
@@ -56,22 +60,21 @@ print("\nReplaced Rank object:")
 print_json(get_object_by_path(data, path_to_find))
 
 # Check if SaveSlot has an AutoSave object and insert test AutoSave if not
-path_to_autosave = [{'name': 'AutoSave'}]
+path_to_autosave = [{"name": "AutoSave"}]
 autosave = get_object_by_path(data, path_to_autosave)
-if autosave == None:
-    print('\nNo AutoSave object found. Inserting AutoSave.')
+if autosave is None:
+    print("\nNo AutoSave object found. Inserting AutoSave.")
 
     # path of object to insert new object before or after
     path_to_insert = [{"type": "FileEndProperty"}]
 
     # Reading in previously extracted AutoSave object
-    autosave = load_json('ExampleSavFiles/CrabChampions_AutoSave.json')
+    autosave = load_json("ExampleSavFiles/CrabChampions_AutoSave.json")
 
     # insert AutoSave object before FileEndProperty object
-    insert_object_by_path(data, path_to_insert, autosave, position='before')
-    if get_object_by_path(data, path_to_autosave) != None:
+    insert_object_by_path(data, path_to_insert, autosave, position="before")
+    if get_object_by_path(data, path_to_autosave) is not None:
         print("\nFound inserted AutoSave.")
-
 
 
 # The following lines show the process of converting the edited .json back to .sav
@@ -79,6 +82,6 @@ if autosave == None:
 binary_data = json_to_sav(data)
 
 # write new .sav file converted from .json
-with open('New_CrabChampions_SaveSlot.sav', 'wb') as file:
-        # Write the binary data to the file
-        file.write(binary_data)
+with open("New_CrabChampions_SaveSlot.sav", "wb") as file:
+    # Write the binary data to the file
+    file.write(binary_data)

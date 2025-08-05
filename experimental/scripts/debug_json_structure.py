@@ -3,6 +3,7 @@
 import json
 import sys
 
+
 def print_top_level_keys(data):
     if isinstance(data, list):
         for i, item in enumerate(data):
@@ -22,13 +23,16 @@ def print_top_level_keys(data):
     else:
         print(f"Top-level type: {type(data).__name__}")
 
+
 def main():
-    if len(sys.argv) < 2:
+    MIN_ARGS = 2  # script + json file
+    if len(sys.argv) < MIN_ARGS:
         print("Usage: debug_json_structure.py <jsonfile>")
         return
-    with open(sys.argv[1], "r") as f:
+    with open(sys.argv[1]) as f:
         data = json.load(f)
     print_top_level_keys(data)
+
 
 if __name__ == "__main__":
     main()

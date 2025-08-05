@@ -8,18 +8,21 @@ Create a patch template for Empires of the Undergrowth saves.
 - If no stage save is found, the script will exit with a warning.
 """
 
-import os
-import subprocess
-import json
-import re
-import sys
 import argparse
+import json
+import os
+import re
+import subprocess
+import sys
 
 SAVE_DIR = os.path.expanduser("~/Library/Application Support/Epic/EotU/Saved/SaveGames")
 TEMP_DIR = "temp"
 PATCH_DIR = "patches"
 PATCH_TEMPLATE_NUMERIC = os.path.join(PATCH_DIR, "jelly_territory_patch_template.json")
 PATCH_TEMPLATE_FOOD = os.path.join(PATCH_DIR, "food_patch_template.json")
+# Default template path used by extract_food_nodes()
+PATCH_TEMPLATE = os.path.join(PATCH_DIR, "food_nodes_patch_template.json")
+
 
 def find_main_saves():
     files = []
@@ -27,6 +30,7 @@ def find_main_saves():
         if fname.endswith(".sav") and not re.match(r".*-backup\d+\.sav$", fname):
             files.append(fname)
     return files
+
 
 def find_latest_stage_save(main_saves):
     # Look for files with "Stage" and a number, pick the highest
@@ -41,6 +45,7 @@ def find_latest_stage_save(main_saves):
         return stage_files[0][1]
     return None
 
+
 def find_latest_leveldata_save(main_saves):
     # Find the latest Colony1LevelData.sav (or similar)
     leveldata_files = [fname for fname in main_saves if "Colony1LevelData" in fname]
@@ -50,26 +55,29 @@ def find_latest_leveldata_save(main_saves):
     latest = max(leveldata_files, key=lambda f: os.path.getmtime(os.path.join(SAVE_DIR, f)))
     return latest
 
+
 def copy_latest_saves(main_saves):
     os.makedirs(TEMP_DIR, exist_ok=True)
     for fname in main_saves:
         src = os.path.join(SAVE_DIR, fname)
         dst = os.path.join(TEMP_DIR, f"{fname}_ORIGINAL.sav")
         if os.path.exists(src):
-            subprocess.run(["cp", src, dst])
+            subprocess.run(["cp", src, dst], check=False)
             print(f"✓ Copied {src} -> {dst}")
         else:
             print(f"✗ Save not found: {src}")
+
 
 def convert_to_json(main_saves):
     for fname in main_saves:
         src = os.path.join(TEMP_DIR, f"{fname}_ORIGINAL.sav")
         dst = os.path.join(TEMP_DIR, f"{fname}_working.json")
         if os.path.exists(src):
-            subprocess.run(["uesave", "to-json", "--input", src, "--output", dst])
+            subprocess.run(["uesave", "to-json", "--input", src, "--output", dst], check=False)
             print(f"✓ Converted {src} -> {dst}")
         else:
             print(f"✗ Backup not found: {src}")
+
 
 def extract_food_nodes(latest_stage_save):
     os.makedirs(PATCH_DIR, exist_ok=True)
@@ -78,7 +86,7 @@ def extract_food_nodes(latest_stage_save):
     if not os.path.exists(json_path):
         print(f"✗ JSON not found: {json_path}")
         sys.exit(1)
-    with open(json_path, "r") as f:
+    with open(json_path) as f:
         data = json.load(f)
     # Try to find ResourceBaseSaveStates
     nodes = []
@@ -106,16 +114,19 @@ def extract_food_nodes(latest_stage_save):
             food_val = node["SavedFoodHeld"]
         elif "value" in node and isinstance(node["value"], dict) and "SavedFoodHeld" in node["value"]:
             food_val = node["value"]["SavedFoodHeld"]
-        template.append({
-            "enabled": True,
-            "food_value": food_val,
-            "description": f"{latest_stage_save} Node {i} (original value: {food_val})",
-            "source_file": latest_stage_save,
-            "node_index": i
-        })
+        template.append(
+            {
+                "enabled": True,
+                "food_value": food_val,
+                "description": f"{latest_stage_save} Node {i} (original value: {food_val})",
+                "source_file": latest_stage_save,
+                "node_index": i,
+            }
+        )
     with open(PATCH_TEMPLATE, "w") as f:
         json.dump(template, f, indent=2)
     print(f"✓ Patch template created: {PATCH_TEMPLATE}")
+
 
 def _collect_int_values(obj, target_keys, found):
     """
@@ -131,6 +142,7 @@ def _collect_int_values(obj, target_keys, found):
         for item in obj:
             _collect_int_values(item, target_keys, found)
 
+
 def extract_numeric_patch(latest_stage_save):
     os.makedirs(PATCH_DIR, exist_ok=True)
     print(f"Scanning {latest_stage_save} for RoyalJelly_0/Territory_0 values...")
@@ -138,7 +150,7 @@ def extract_numeric_patch(latest_stage_save):
     if not os.path.exists(json_path):
         print(f"✗ JSON not found: {json_path}")
         sys.exit(1)
-    with open(json_path, "r") as f:
+    with open(json_path) as f:
         data = json.load(f)
     # Recursively search for RoyalJelly_0 and Territory_0 "Int" values
     found = {"RoyalJelly_0": [], "Territory_0": []}
@@ -146,28 +158,36 @@ def extract_numeric_patch(latest_stage_save):
     jelly_vals = found["RoyalJelly_0"]
     territory_vals = found["Territory_0"]
     if not jelly_vals and not territory_vals:
-        print("Warning: Could not find RoyalJelly_0/Territory_0 Int values in save. Skipping numeric patch template creation.")
+        print(
+            "Warning: Could not find RoyalJelly_0/Territory_0 Int values in save. "
+            "Skipping numeric patch template creation."
+        )
         return
     template = []
     for val in jelly_vals:
-        template.append({
-            "enabled": True,
-            "resource": "jelly",
-            "current_value": val,
-            "new_value": None,
-            "description": f"{latest_stage_save} RoyalJelly_0 (original value: {val})"
-        })
+        template.append(
+            {
+                "enabled": True,
+                "resource": "jelly",
+                "current_value": val,
+                "new_value": None,
+                "description": f"{latest_stage_save} RoyalJelly_0 (original value: {val})",
+            }
+        )
     for val in territory_vals:
-        template.append({
-            "enabled": True,
-            "resource": "territory",
-            "current_value": val,
-            "new_value": None,
-            "description": f"{latest_stage_save} Territory_0 (original value: {val})"
-        })
+        template.append(
+            {
+                "enabled": True,
+                "resource": "territory",
+                "current_value": val,
+                "new_value": None,
+                "description": f"{latest_stage_save} Territory_0 (original value: {val})",
+            }
+        )
     with open(PATCH_TEMPLATE_NUMERIC, "w") as f:
         json.dump(template, f, indent=2)
     print(f"✓ Numeric patch template created: {PATCH_TEMPLATE_NUMERIC}")
+
 
 def extract_food_patch(latest_stage_save):
     os.makedirs(PATCH_DIR, exist_ok=True)
@@ -176,7 +196,7 @@ def extract_food_patch(latest_stage_save):
     if not os.path.exists(json_path):
         print(f"✗ JSON not found: {json_path}")
         sys.exit(1)
-    with open(json_path, "r") as f:
+    with open(json_path) as f:
         data = json.load(f)
     nodes = []
     if isinstance(data, list):
@@ -203,21 +223,29 @@ def extract_food_patch(latest_stage_save):
             food_val = node["SavedFoodHeld"]
         elif "value" in node and isinstance(node["value"], dict) and "SavedFoodHeld" in node["value"]:
             food_val = node["value"]["SavedFoodHeld"]
-        template.append({
-            "enabled": True,
-            "food_value": food_val,
-            "new_value": None,
-            "description": f"{latest_stage_save} Node {i} (original value: {food_val})",
-            "source_file": latest_stage_save,
-            "node_index": i
-        })
+        template.append(
+            {
+                "enabled": True,
+                "food_value": food_val,
+                "new_value": None,
+                "description": f"{latest_stage_save} Node {i} (original value: {food_val})",
+                "source_file": latest_stage_save,
+                "node_index": i,
+            }
+        )
     with open(PATCH_TEMPLATE_FOOD, "w") as f:
         json.dump(template, f, indent=2)
     print(f"✓ Food patch template created: {PATCH_TEMPLATE_FOOD}")
 
+
 def main():
     parser = argparse.ArgumentParser(description="Create patch template for Empires of the Undergrowth saves.")
-    parser.add_argument("--mode", choices=["numeric", "food"], required=True, help="Patch template mode")
+    parser.add_argument(
+        "--mode",
+        choices=["numeric", "food"],
+        required=True,
+        help="Patch template mode",
+    )
     args = parser.parse_args()
 
     main_saves = find_main_saves()
@@ -246,6 +274,7 @@ def main():
         convert_to_json(saves_to_process)
         extract_food_patch(latest_stage_save)
     print("\nDone. Edit the patch template and run the appropriate make target.")
+
 
 if __name__ == "__main__":
     main()

@@ -2,6 +2,7 @@
 
 import json
 
+
 def extract_saved_foodheld(resource_nodes):
     """Sum all SavedFoodHeld_0.Int values in resource nodes."""
     total = 0
@@ -13,6 +14,7 @@ def extract_saved_foodheld(resource_nodes):
             total += food
     return total
 
+
 def extract_resources_value(player_states):
     """Extract Resources_0.Int from each player state (returns list of ints)."""
     values = []
@@ -23,8 +25,9 @@ def extract_resources_value(player_states):
             values.append(res)
     return values
 
+
 def analyze_file(filename):
-    with open(filename, 'r') as f:
+    with open(filename) as f:
         data = json.load(f)
     try:
         resource_nodes = data["root"]["properties"]["ResourceBaseSaveStates_0"]["Array"]["Struct"]["value"]
@@ -37,6 +40,7 @@ def analyze_file(filename):
     total_foodheld = extract_saved_foodheld(resource_nodes)
     resources_list = extract_resources_value(player_states)
     return total_foodheld, resources_list
+
 
 def main():
     file1 = "test_backup.json"
@@ -57,10 +61,11 @@ def main():
     print("Difference (file2 - file1):")
     print(f"  ΔSavedFoodHeld: {food2 - food1}")
     if reslist1 and reslist2:
-        for i, (r1, r2) in enumerate(zip(reslist1, reslist2)):
+        for i, (r1, r2) in enumerate(zip(reslist1, reslist2, strict=False)):
             print(f"  ΔResources (player {i}): {r2 - r1}")
     else:
         print("  ΔResources:     (could not extract)")
+
 
 if __name__ == "__main__":
     main()

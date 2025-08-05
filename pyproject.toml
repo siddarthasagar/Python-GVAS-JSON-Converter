@@ -5,3 +5,52 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
+
+[tool.ruff]
+# Relax global line length to reduce noise in scripts and utilities.
+line-length = 120
+target-version = "py311"
+# Global excludes for all Ruff tasks (check and format).
+exclude = [
+  "SavConverter/",
+]
+
+[tool.ruff.lint]
+# Core rules; ruff handles lint (E,F), import sorting (I), and modernization (UP via pyupgrade).
+select = ["E", "F", "I", "UP", "B", "SIM", "PL"]
+# Optionally tune noisy rules initially; remove as you refactor.
+ignore = [
+  "PLR0913",  # too many arguments
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-sort-within-sections = true
+lines-between-types = 1
+known-first-party = ["utils_savconverter", "utils_uesave", "stable"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+[tool.mypy]
+python_version = "3.11"
+# Keep permissive for third-party stubs initially.
+ignore_missing_imports = true
+no_implicit_optional = true
+warn_return_any = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+show_error_codes = true
+pretty = true
+# Exclude SavConverter from type checking to avoid churn in vendored code.
+exclude = "(^|/)SavConverter(/|$)"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.17.1",
+    "pre-commit>=4.2.0",
+    "ruff>=0.12.7",
+]

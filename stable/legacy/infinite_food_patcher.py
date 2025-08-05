@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import json
 import argparse
-import os
+import json
+
 
 def get_resource_nodes(data):
     """Find the dict with name 'ResourceBaseSaveStates' and return its value list."""
@@ -23,14 +23,15 @@ def get_resource_nodes(data):
     else:
         raise Exception("Unknown top-level JSON structure.")
 
+
 def patch_nodes(data, node_indices, new_value):
     nodes = get_resource_nodes(data)
     for idx in node_indices:
         if idx >= len(nodes):
-            print(f"Warning: Node index {idx} out of range (max: {len(nodes)-1})")
+            print(f"Warning: Node index {idx} out of range (max: {len(nodes) - 1})")
             continue
         node = nodes[idx]
-        
+
         # Handle both dict and list node structures
         if isinstance(node, dict):
             struct = node.get("Struct", {})
@@ -47,15 +48,16 @@ def patch_nodes(data, node_indices, new_value):
         else:
             print(f"Warning: Node {idx} has unknown structure")
             continue
-            
+
         rss = struct.get("ResourceSubSaveState_0", {}).get("Struct", {}).get("Struct", {})
         food = rss.get("SavedFoodHeld_0", {})
         if isinstance(food, dict):
             food["Int"] = new_value
     return data
 
+
 def patch_from_template(data, template_path):
-    with open(template_path, "r") as f:
+    with open(template_path) as f:
         template = json.load(f)
     nodes = get_resource_nodes(data)
     patched_count = 0
@@ -63,13 +65,13 @@ def patch_from_template(data, template_path):
         if entry.get("enabled"):
             idx = entry["index"]
             new_value = entry["new_value"]
-            
+
             if idx >= len(nodes):
-                print(f"Warning: Node index {idx} out of range (max: {len(nodes)-1})")
+                print(f"Warning: Node index {idx} out of range (max: {len(nodes) - 1})")
                 continue
-                
+
             node = nodes[idx]
-            
+
             # Handle both dict and list node structures
             if isinstance(node, dict):
                 struct = node.get("Struct", {})
@@ -86,7 +88,7 @@ def patch_from_template(data, template_path):
             else:
                 print(f"Warning: Node {idx} has unknown structure")
                 continue
-                
+
             rss = struct.get("ResourceSubSaveState_0", {}).get("Struct", {}).get("Struct", {})
             food = rss.get("SavedFoodHeld_0", {})
             if isinstance(food, dict):
@@ -94,6 +96,7 @@ def patch_from_template(data, template_path):
                 patched_count += 1
     print(f"Patched {patched_count} nodes from template.")
     return data
+
 
 def main():
     parser = argparse.ArgumentParser(description="Patch SavedFoodHeld for selected resource nodes.")
@@ -104,7 +107,7 @@ def main():
     parser.add_argument("--patch", help="JSON patch template file (overrides --nodes/--value)")
     args = parser.parse_args()
 
-    with open(args.input, "r") as f:
+    with open(args.input) as f:
         data = json.load(f)
 
     if args.patch:
@@ -120,6 +123,7 @@ def main():
         json.dump(patched_data, f, indent=2)
 
     print(f"Patched save written to {args.output}")
+
 
 if __name__ == "__main__":
     main()

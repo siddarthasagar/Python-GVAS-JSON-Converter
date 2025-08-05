@@ -23,7 +23,7 @@ YELLOW := \033[0;33m
 BLUE := \033[0;34m
 NC := \033[0m # No Color
 
-.PHONY: help check-deps backup install clean validate show-config restore dev-patch save-files-refresh json-conversion patch-create patch-validate patch-apply patch-food-create patch-food-validate patch-food-apply patch-save test-workflow
+.PHONY: help check-deps backup install clean validate show-config restore dev-patch save-files-refresh json-conversion patch-create patch-validate patch-apply patch-food-create patch-food-validate patch-food-apply patch-save test-workflow fmt lint typecheck ci
 
 # --- Help ---
 help: ## Show this help message
@@ -41,6 +41,22 @@ help: ## Show this help message
 	@echo "  make patch-apply"
 	@echo "  make patch-save"
 	@echo ""
+
+# --- Dev Tooling (Ruff + Mypy) ---
+fmt: ## Auto-fix lint issues and format code with Ruff (excludes SavConverter via pyproject; includes pyupgrade)
+	uv run ruff check --fix .
+	uv run ruff format .
+
+lint: ## Run Ruff lint checks (no fixes)
+	uv run ruff check .
+
+typecheck: ## Run Mypy type checks (SavConverter excluded via pyproject)
+	uv run mypy .
+
+ci: ## Run formatting, linting, and type checks
+	$(MAKE) fmt
+	$(MAKE) lint
+	$(MAKE) typecheck
 
 # --- Dependency Checks ---
 check-deps: ## Check if required tools are available

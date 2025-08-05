@@ -3,7 +3,8 @@ import argparse
 import json
 import logging
 import sys
-from typing import Any, Dict, List
+from typing import Any
+
 
 def setup_logger():
     logger = logging.getLogger("apply_patch")
@@ -14,6 +15,7 @@ def setup_logger():
     logger.addHandler(handler)
     return logger
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Generic patching script for save files.")
     parser.add_argument("input_save", help="Path to input save file (JSON)")
@@ -21,21 +23,25 @@ def parse_args():
     parser.add_argument("output_file", help="Path to output file (JSON)")
     return parser.parse_args()
 
+
 def load_json(path: str) -> Any:
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
+
 
 def save_json(path: str, data: Any):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
-def get_by_path(obj: Any, path: List[str]):
+
+def get_by_path(obj: Any, path: list[str]):
     """Traverse obj by path, return reference to value."""
     for key in path[:-1]:
         obj = obj[key]
     return obj, path[-1]
 
-def apply_action(target: Any, key: str, action: Dict[str, Any], logger: logging.Logger):
+
+def apply_action(target: Any, key: str, action: dict[str, Any], logger: logging.Logger):
     act_type = action.get("action")
     value = action.get("value")
     if act_type == "set":
@@ -49,7 +55,8 @@ def apply_action(target: Any, key: str, action: Dict[str, Any], logger: logging.
     else:
         logger.warning(f"Unknown action type: {act_type} for key: {key}")
 
-def apply_patch(save_data: Dict[str, Any], patch_template: List[Dict[str, Any]], logger: logging.Logger):
+
+def apply_patch(save_data: dict[str, Any], patch_template: list[dict[str, Any]], logger: logging.Logger):
     for entry in patch_template:
         patch_type = entry.get("type")
         path = entry.get("path")
@@ -68,6 +75,7 @@ def apply_patch(save_data: Dict[str, Any], patch_template: List[Dict[str, Any]],
         except Exception as e:
             logger.error(f"Failed to apply patch {entry}: {e}")
 
+
 def main():
     args = parse_args()
     logger = setup_logger()
@@ -76,6 +84,7 @@ def main():
     apply_patch(save_data, patch_template, logger)
     save_json(args.output_file, save_data)
     logger.info(f"Patching complete. Output saved to {args.output_file}")
+
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,8 @@
-import sys
 import json
+import sys
+
 from SavConverter.JsonToSav import json_to_sav
+
 
 def extract_all_values(properties):
     result = []
@@ -24,22 +26,27 @@ def extract_all_values(properties):
             continue
     return result
 
-if len(sys.argv) != 3:
+
+MIN_ARGS = 3
+if len(sys.argv) != MIN_ARGS:
     print("Usage: python3 flatten_and_convert_json_to_sav.py input.json output.sav")
     sys.exit(1)
 
 input_file = sys.argv[1]
 output_file = sys.argv[2]
 
-with open(input_file, "r") as f:
-    data = json.load(f)
+
+with open(input_file, encoding="utf-8") as fin:
+    data = json.load(fin)
 
 properties = data["root"]["properties"]
 flat_list = extract_all_values(properties)
 
+# json_to_sav returns bytes
 sav_bytes = json_to_sav(flat_list)
 
-with open(output_file, "wb") as f:
-    f.write(sav_bytes)
+# Open output in binary mode and write bytes to satisfy typing (BinaryIO)
+with open(output_file, "wb") as bout:
+    bout.write(sav_bytes)
 
 print(f"Converted {input_file} to {output_file} using {len(flat_list)} save objects.")
